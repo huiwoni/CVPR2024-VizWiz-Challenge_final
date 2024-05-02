@@ -32,23 +32,17 @@ This project contains several directories. Their roles are listed as follows:
             |-- images
 
   
-## Get Started
+## Quick start
 
-Specify the root folder for all datasets `_C.DATA_DIR = "./data"` in the file `conf.py`.
+Before starting, modify the checkpoint path in ./best_cfgs/evaluation.yaml
 
-Please change the number of contrasts in ./best_sfgs/parallel_psedo_contrast.yaml.
+The pre-trained model can be found [here]().
 
-The corresponding accuracy is as shown in the table below:
-
-|contrasts(aug)|Accuracy|
-|------|---|
-|1|65.21|
-|3|65.33|
-|7|65.53|
+    CUDA_VISIBLE_DEVICES=0,1,2,3 python evaluation.py --cfg ./best_cfgs/evaluation.yaml --output_dir ./output/test-time-evaluation/"[YOUR EXPERIMENRT NAME]"`
 
 ### How to reproduce
 
-Train and test model
+Train model
 
     CUDA_VISIBLE_DEVICES=0,1,2,3 python challenge_test_time.py --cfg ./best_cfgs/parallel_psedo_contrast.yaml --output_dir ./test-time-evaluation/"[YOUR EXPERIMENRT NAME]"
 
