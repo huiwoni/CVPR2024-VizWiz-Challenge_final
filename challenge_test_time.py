@@ -27,23 +27,6 @@ def fix_seed(seed):
 	    torch.backends.cudnn.benchmark = False
 ##################################################### func end
 
-def make_samples_weight(psedo_lable, testset, num_classes):
-################################################################################ func start
-    cls_num_list = [0.1] * num_classes
-
-    for label in psedo_lable:
-        cls_num_list[int(label)] += 1
-
-    weighted_alpha = 1
-    cls_weight = 1.0 / (np.array(cls_num_list) ** weighted_alpha)
-    cls_weight = cls_weight / np.sum(cls_weight) * len(cls_num_list)
-
-    samples_weight = np.array([cls_weight[t] for t in testset.targets])
-    samples_weight = torch.from_numpy(samples_weight)
-    samples_weight = samples_weight.double()
-################################################################################# func end
-    return samples_weight
-
 def evaluate(cfg):
 
     num_classes = get_num_classes(dataset_name=cfg.CORRUPTION.DATASET)
@@ -73,53 +56,34 @@ def evaluate(cfg):
     ######################################################################################################### func end
 
     # start evaluation
+    testset, test_loader = load_dataset(cfg.CORRUPTION.DATASET, cfg.DATA_DIR,
+                                                cfg.TEST.BATCH_SIZE,
+                                                split='all', domain=domain_name, level=severity,
+                                                adaptation=cfg.MODEL.ADAPTATION,
+                                                workers=min(cfg.TEST.NUM_WORKERS, os.cpu_count()),
+                                                ckpt=os.path.join(cfg.CKPT_DIR, 'Datasets'),
+                                                num_aug=cfg.TEST.N_AUGMENTATIONS,
+                                                model_arch=cfg.MODEL.ARCH)
+
     for epoch in range(cfg.TEST.EPOCH):
-    ########################################################################################################################## for start
+    ############################################################################################################ for start
+    	if cfg.MODEL.ADAPTATION == 'parallel_psedo_contrast':
+        ############################################################### if start
+            results = create_submit_file_for_new_idea(model, data_loader=test_loader, mask = indices_in_1k, epoch = epoch, image_list = image_list)
+            ############################################################### if end
+        else:
+        ######################################################## else start
+            results = create_submit_file(model, data_loader=test_loader, mask = indices_in_1k)
+        ######################################################## else end
 
-        if cfg.MODEL.ADAPTATION == 'parallel_psedo_contrast':
-        ############################################################################################## if start
+        if ((epoch + 1) % 5) == 0:
+            torch.save(model.state_dict(), os.path.join(cfg.OUTPUT, f'trained_{epoch+1}.pth'))
 
-            if epoch == 0:
-            ############################################################################# if start
-                testset, test_loader = load_dataset(cfg.CORRUPTION.DATASET, cfg.DATA_DIR,
-                                        cfg.TEST.BATCH_SIZE,
-                                        split='all',
-                                        adaptation=cfg.MODEL.ADAPTATION,
-                                        workers=min(cfg.TEST.NUM_WORKERS, os.cpu_count()),
-                                        ckpt=os.path.join(cfg.CKPT_DIR, 'Datasets'),
-                                        num_aug=cfg.TEST.N_AUGMENTATIONS,
-                                        model_arch=cfg.MODEL.ARCH)
-
-                results = create_submit_file_for_new_idea(model,
-                                                          data_loader=test_loader,
-                                                          mask=indices_in_1k,
-                                                          epoch=epoch,
-                                                          image_list=image_list)
-
-                samples_weight = make_samples_weight(model.psedo_lable_bank[:, epoch].detach().tolist(),
-                                         testset, num_classes)
-
-                weighted_sampler = torch.utils.data.WeightedRandomSampler(samples_weight,
-                                                              len(samples_weight),
-                                                              replacement=True)
-
-                weighted_train_loader = torch.utils.data.DataLoader(testset, batch_size=cfg.TEST.BATCH_SIZE,
-                                                            num_workers=cfg.WORKERS, pin_memory=True,
-                                                            sampler=weighted_sampler)
-            ############################################################################# if end
-
-            else:
-            ############################################################################# else start
-
-                results = create_submit_file_for_new_idea(model=model,
-                                                          data_loader=weighted_train_loader,
-                                                          mask=indices_in_1k,
-                                                          epoch=epoch,
-                                                          image_list=image_list)
-            ############################################################################# else sta
-
-        #################################################################################################### if end
-
+        file_path = os.path.join(cfg.OUTPUT, datetime.now().strftime(f'{epoch+1}epoch_prediction-%m-%d-%Y-%H:%M:%S.json'))
+        with open(file_path, 'w') as outfile:
+            json.dump(results, outfile)
+        ############################################################################################################ for end
+	    
         if ((epoch + 1) % 5) == 0:
         ############################################ if start
             torch.save(model.state_dict(),
