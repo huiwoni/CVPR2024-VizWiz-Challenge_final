@@ -18,6 +18,7 @@ pip install torch==1.12.1+cu113 torchvision==0.13.1+cu113 torchaudio==0.12.1 --e
 ## Structure of Project
 
 This project contains several directories. Their roles are listed as follows:
+
 + `./best_cfgs`: the best config files for each dataset and algorithm are saved here.
 + `./datasets`
   
@@ -26,7 +27,7 @@ This project contains several directories. Their roles are listed as follows:
                 |-- 8900
             |-- images
   
-  - `./images` : All data downloaded from the challenge is saved. Delete the train, val, and test files in `./images`. You can download it [here](https://github.com/rezaakb/VizWiz-Classification-Dataset)
+  - `./images` : All data downloaded from the challenge is saved. Delete the train, val, and test files in `./images`. You can download it [here](https://github.com/rezaakb/VizWiz-Classification-Dataset).
   - `./challenge/8900` : Create a file in advance before starting. This file will contain 8900 pieces of test data from the challenge. If you don't have it, run the code below:
   
     ```bash
@@ -36,19 +37,19 @@ This project contains several directories. Their roles are listed as follows:
     
 ## Quick start (Test)
 
-Before starting, modify the checkpoint path in `./best_cfgs/evaluation.yaml`
+Before starting, modify the checkpoint path in `./best_cfgs/evaluation.yaml`.
 
 The pre-trained model can be found [here](https://drive.google.com/drive/folders/1UFVLyONwlqJpWE6hEw7Kqqxw2GdBo43m).
 
-The testing results and training logs will be saved in the `./output/test-time-evaluation/"[YOUR EXPERIMENRT NAME]"`
+The testing results and training logs will be saved in the `./output/test-time-evaluation/"[YOUR EXPERIMENRT NAME]"`.
 
     CUDA_VISIBLE_DEVICES=0,1,2,3 python evaluation.py --cfg ./best_cfgs/evaluation.yaml --output_dir ./output/test-time-evaluation/"[YOUR EXPERIMENRT NAME]"`
 
 ## Train model
 
-Before starting, modify the checkpoint path in `./best_cfgs/parallel_psedo_contrast.yaml`
+Before starting, modify the checkpoint path in `./best_cfgs/parallel_psedo_contrast.yaml`.
 
-The testing results and training logs will be saved in the `./output/test-time-evaluation/"[YOUR EXPERIMENRT NAME]"`
+The testing results and training logs will be saved in the `./output/test-time-evaluation/"[YOUR EXPERIMENRT NAME]"`.
 
     CUDA_VISIBLE_DEVICES=0,1,2,3 python challenge_test_time.py --cfg ./best_cfgs/parallel_psedo_contrast.yaml --output_dir ./test-time-evaluation/"[YOUR EXPERIMENRT NAME]"
 
