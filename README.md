@@ -26,7 +26,7 @@ This project contains several directories. Their roles are listed as follows:
                 |-- 8900
             |-- images
   
-  - './images' All data downloaded from the challenge is saved. Delete the train, val, and test files. You can download it [here](https://github.com/rezaakb/VizWiz-Classification-Dataset)
+  - './images' All data downloaded from the challenge is saved. Delete the train, val, and test files in './images'. You can download it [here](https://github.com/rezaakb/VizWiz-Classification-Dataset)
   - './challenge/8900' contains 8900 pieces of test data from the challenge. If you don't have it, run the code below:
     ```bash
     pip install opencv-python==4.9.0.80
