@@ -18,10 +18,14 @@ pip install torch==1.12.1+cu113 torchvision==0.13.1+cu113 torchaudio==0.12.1 --e
 ## Structure of Project
 
 This project contains several directories. Their roles are listed as follows:
-
 + ./best_cfgs: the best config files for each dataset and algorithm are saved here.
 + ./datasets
-  
+  - './challenge/8900' contains 8900 pieces of test data from the challenge. If you don't have it, run the code below:
+    ```bash
+    python extract_images.py
+    ```
+  - './images' All data downloaded from the challenge is saved. Delete the train, val, and test files.
+    
   	    |-- datasets 
   	        |-- challenge
                 |-- 8900
