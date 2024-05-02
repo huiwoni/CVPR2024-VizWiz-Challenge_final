@@ -23,14 +23,9 @@ This project contains several directories. Their roles are listed as follows:
 + ./datasets
   
   	    |-- datasets 
-  	
   	        |-- challenge
-  	
-  	                |-- original
-  	
-  	                        |-- 5
-  	
-  	                              |-- vizwiz
+                |-- 8900
+            |-- images
 
   
 ## Get Started
