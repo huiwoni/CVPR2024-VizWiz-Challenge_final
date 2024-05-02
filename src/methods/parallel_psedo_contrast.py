@@ -1,11 +1,17 @@
+"""
+Copyright to Tent Authors ICLR 2021 Spotlight
+"""
+
+from argparse import ArgumentDefaultsHelpFormatter
 from copy import deepcopy
+
 import torch
 import torch.nn as nn
 import torch.jit
 from src.data.augmentations import get_tta_transforms
 from src.utils.utils import deepcopy_model
+from torch.autograd import Variable
 from src.utils.loss import SupConLoss
-from ..models.base_model import BaseModel
 import torch.nn.functional as F
 
 class Parallel_psedo_contrast(nn.Module):
@@ -13,12 +19,15 @@ class Parallel_psedo_contrast(nn.Module):
     """Tent adapts a model by entropy minimization during testing.
     Once tented, a model adapts itself by updating on every forward.
     """
-    def __init__(self, model, optimizer, ema_model, optimizer_teacher, mt_alpha, rst_m, ap, dataset_name, steps=1, episodic=False,
-                 num_aug=32, adaptation_type='otta', use_memory=None, output_dir=None, max_epoch = 10, arch_name = None, contrast = 3):
+    def __init__(self, model, optimizer, ema_model, optimizer_teacher, mt_alpha, rst_m, ap, dataset_name, steps=1, episodic=False, num_aug=32, adaptation_type='otta', output_dir=None, use_memory=None, max_epoch = 10, arch_name = None, contrast = 3):
         super().__init__()
 
         device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
         self.model = model
+        if torch.cuda.is_available():
+            if torch.cuda.device_count() > 1:
+                self.model = torch.nn.DataParallel(self.model)
+                self.model.to(device)
         self.optimizer = optimizer
         self.steps = steps
         assert steps > 0, "cotta requires >= 1 step(s) to forward and update"
@@ -44,11 +53,13 @@ class Parallel_psedo_contrast(nn.Module):
         self.supconloss = SupConLoss()
         self.contrast = contrast
 ######################################################################################################################## class end
+
+
     def forward(self, x, epoch, iter, class_mask, class_number):
-    ######################################################################################################################################## func start
+    ######################################################################################################################################## forward start
 
         if self.adaptation_type == 'ttba':
-        ################################################################################################################ if start
+        ################################################################################################################ if for ttba start
             self.reset()
             self.model.train()
 
@@ -59,26 +70,24 @@ class Parallel_psedo_contrast(nn.Module):
             self.model.eval()
             with torch.no_grad():
                 outputs = self.model(x)
-        ################################################################################################################ if end
+        ################################################################################################################ if for ttba end
 
         elif (self.adaptation_type == 'otta') or (self.adaptation_type == 'ttda'):
-        ####################################################################################### if start
+        ####################################################################################### if for otta, ttda start
             self.model.train()
             self.model_ema.train()
 
             if self.steps > 0:
                 for _ in range(self.steps):
                     outputs = self.forward_and_adapt(x, self.optimizer, self.optimizer_teacher, epoch, iter, class_mask, class_number)
-        ######################################################################################## if end
+        ######################################################################################## if for otta end
 
-    ######################################################################################################################################### func end
         return outputs
-
+    ######################################################################################################################################### forward end
 
 
     @torch.enable_grad()  # ensure grads in possible no grad context for testing
     def forward_and_adapt(self, x, optimizer, optimizer_teacher, epoch, iter, class_mask, class_number):
-    ############################################################################################################################################################################################ func start
         """Forward and adapt model on batch of data.
         Measure entropy of the model prediction, take gradients, and update params.
         """
@@ -86,11 +95,14 @@ class Parallel_psedo_contrast(nn.Module):
         outputs_emas = []
         feature_banks = []
 
+        # forward
         feats, outputs = self.model(x, return_feats = True)
+        feats = feats
         outputs = (outputs * class_mask)[:, class_number]
 
         standard_ema = (self.model_ema(x)*class_mask)[:, class_number]
-        anchor_prob = torch.nn.functional.softmax((self.model_anchor(x)*class_mask)[:, class_number], dim=1).max(1)[0]
+        first_prediction = (self.model_anchor(x)*class_mask)[:, class_number].detach()
+        anchor_prob = torch.nn.functional.softmax(first_prediction, dim=1).max(1)[0]
         to_aug = anchor_prob.mean(0) < self.ap
 
         if to_aug:
@@ -102,18 +114,27 @@ class Parallel_psedo_contrast(nn.Module):
         else:
             outputs_ema = standard_ema
 
-        ######################################################################################################### loss ce for student start
         w = loss_weight(outputs_ema.detach())
 
+        ################################################################################################################ loss ce for student start
         loss_ce = self.softmax_entropy(outputs, outputs_ema.detach())
         loss_ce = (w * loss_ce)
 
-        label_mask = self.save_refine_psedo_lable(outputs_ema.detach(), epoch, iter)
+        if self.use_memory is not None:
+        #################################################################################################### if start
+            label_mask = self.save_refine_psedo_lable(outputs_ema.detach(), epoch, iter)
+            loss_ce = (label_mask * loss_ce).mean(0)
+        #################################################################################################### if end
 
-        loss_ce = (label_mask * loss_ce).mean(0)
-        ######################################################################################################### loss ce for student end
+        else:
+        ################################################## else start
+            loss_ce = (w * loss_ce).mean(0)
+        ################################################## else end
 
-        ######################################################################################################################################## contrast loss start
+        ################################################################################################################ loss ce for student end
+
+
+        ##################################################################################################################### contrast loss start
         feature_banks.append(feats)
 
         for i in range(self.contrast):
@@ -131,17 +152,20 @@ class Parallel_psedo_contrast(nn.Module):
         norm_feature = self.norm_feature(feats_masked)
 
         w_masked = w[feats_mask]
-        loss_cts = (w_masked * self.supconloss(norm_feature, outputs_ema_masked.argmax(dim=1))).mean()
-        ########################################################################################################################################## contrast loss end
 
-        ################################################################################ loss div start
+        loss_cts = (w_masked * self.supconloss(norm_feature, outputs_ema_masked.argmax(dim=1))).mean()
+        ##################################################################################################################### contrast loss end
+
+        ################################################################################ loss div for student start
         loss_div = softmax_entropy(outputs).mean(0)
-        ################################################################################ loss div end
+        ################################################################################ loss div for student end
+
 
         student_loss = (loss_ce + loss_div + loss_cts) / 3
         student_loss.backward()
         optimizer.step()
         optimizer.zero_grad()
+
 
         ############################################################### loss ce for teacher start
         teacher_loss = softmax_entropy(outputs_ema).mean(0)
@@ -150,12 +174,11 @@ class Parallel_psedo_contrast(nn.Module):
         optimizer_teacher.zero_grad()
         ############################################################### loss ce for teacher end
 
+
         with open(self.output_dir + f'/parallel_psedo_{str(self.model)[:7]}.txt', 'a') as f:
             f.write(f'mask {int(label_mask.sum())} loss_cts: {loss_cts} loss_div: {loss_div} loss_ce: {loss_ce} student_loss: {student_loss} teacher_loss: {teacher_loss} \n')
 
-    ######################################################################################################################################################################################## func end
-        return outputs
-
+        return (outputs + first_prediction) / 2
 
     def reset(self):
 
@@ -167,6 +190,7 @@ class Parallel_psedo_contrast(nn.Module):
     def reset_steps(self, new_steps):
         self.steps = new_steps
 
+
     def save_refine_psedo_lable(self, psedo, epoch, iter):
     ############################################################################## func start
         predictions = psedo.argmax(1)
@@ -176,28 +200,29 @@ class Parallel_psedo_contrast(nn.Module):
 
         self.psedo_lable_bank[start:end, epoch] = predictions
 
-        # if epoch == 0:
-        # ###################################### if start
-        #     return mask
-        # ###################################### if end
-        #
-        # elif epoch < (self.use_memory + 1):
-        # ############################################################## else start
-        #     select_past = range(epoch)
-        #
-        #     for i in range(len(psedo)):
-        #     ######################################## for start
-        #         mask[i] = len(torch.where(self.psedo_lable_bank[start + i, select_past] != predictions[i])[0]) < 1
-        #     ######################################## for end
-        #
-        # else:
-        # ######################################################### else start
-        #     select_past = range(epoch - self.use_memory, epoch)
-        #
-        #     for i in range(len(psedo)):
-        #     ######################################## for start
-        #         mask[i] = len(torch.where(self.psedo_lable_bank[start + i, select_past] != predictions[i])[0]) < 1
-        #     ######################################## for end
+
+        if epoch == 0:
+        ###################################### if start
+            return mask
+        ###################################### if end
+
+        elif epoch < (self.use_memory + 1):
+        ############################################################## else start
+            select_past = range(epoch)
+
+            for i in range(len(psedo)):
+            ######################################## for start
+                mask[i] = len(torch.where(self.psedo_lable_bank[start + i, select_past] != predictions[i])[0]) < 1
+            ######################################## for end
+
+        else:
+        ######################################################### else start
+            select_past = range(epoch - self.use_memory, epoch)
+
+            for i in range(len(psedo)):
+            ######################################## for start
+                mask[i] = len(torch.where(self.psedo_lable_bank[start + i, select_past] != predictions[i])[0]) < 1
+            ######################################## for end
 
         ############################################################## else end
 
@@ -213,6 +238,7 @@ class Parallel_psedo_contrast(nn.Module):
         nomed_feat = (feature / feat_size)
     ############################################# func end
         return nomed_feat
+
 
     @staticmethod
     def configure_model(model):
@@ -230,6 +256,7 @@ class Parallel_psedo_contrast(nn.Module):
 
         return model
 
+
     @staticmethod
     def configure_model_ema(model_ema):
     ######################################################################################################################## func start
@@ -245,6 +272,7 @@ class Parallel_psedo_contrast(nn.Module):
                 m.requires_grad_(True)
     ######################################################################################################################## func end
         return model_ema
+
 
     @staticmethod
     def collect_params(model):
@@ -266,6 +294,7 @@ class Parallel_psedo_contrast(nn.Module):
 
         return params, names
 
+
     @staticmethod
     def collect_params_ema(model):
     #################################################################################################################### func start
@@ -280,6 +309,8 @@ class Parallel_psedo_contrast(nn.Module):
                         names.append(f"{nm}.{np}")
     #################################################################################################################### func end
         return params, names
+
+
 
     @staticmethod
     def check_model(model):
@@ -296,6 +327,7 @@ class Parallel_psedo_contrast(nn.Module):
         has_bn = any([isinstance(m, nn.BatchNorm2d) for m in model.modules()])
         assert has_bn, "tent needs normalization for its optimization"
 
+
 @torch.jit.script
 def loss_weight(x: torch.Tensor) -> torch.Tensor:
 ################################################################################################ func start
@@ -306,6 +338,7 @@ def loss_weight(x: torch.Tensor) -> torch.Tensor:
     w = torch.exp(-w)
 ################################################################################################ func end
     return w
+
 
 @torch.jit.script
 def softmax_entropy(x: torch.Tensor) -> torch.Tensor:
@@ -322,6 +355,7 @@ def mean_softmax_entropy(x:torch.Tensor)->torch.Tensor:
     entropy=-torch.sum(mean_probe_d*torch.log(mean_probe_d))
     return entropy
 
+
 @torch.jit.script
 def energy(x: torch.Tensor) -> torch.Tensor:
     """Energy calculation from logits."""
@@ -330,6 +364,7 @@ def energy(x: torch.Tensor) -> torch.Tensor:
     if torch.rand(1) > 0.95:
         print(x.mean(0).item())
     return x
+
 
 def copy_model_and_optimizer(model, optimizer, model_ema, optimizer_theacher):
     """Copy the model and optimizer states for resetting after adaptation."""
@@ -346,6 +381,19 @@ def copy_model_and_optimizer(model, optimizer, model_ema, optimizer_theacher):
 
     return model_state, optimizer_state, model_ema_state, optimizer_theacher_state, model_anchor
 
+
+def make_label_filter(prediction):
+############################################################################### func start
+    hard = prediction.argmax(dim=1)
+    all_class = list(set(hard.tolist()))
+
+    class_location = []
+
+    for i in all_class:
+        class_location.append(torch.where(hard == i)[0].tolist())
+
+    return class_location
+############################################################################### func end
 def load_model_and_optimizer(model, optimizer, model_state, optimizer_state):
     """Restore the model and optimizer states from copies."""
     model.load_state_dict(model_state, strict=True)
