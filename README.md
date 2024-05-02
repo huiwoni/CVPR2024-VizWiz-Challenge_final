@@ -32,7 +32,7 @@ This project contains several directories. Their roles are listed as follows:
             |-- images
 
   
-## Quick start
+## Quick start (Test)
 
 Before starting, modify the checkpoint path in ./best_cfgs/evaluation.yaml
 
@@ -40,14 +40,10 @@ The pre-trained model can be found [here]().
 
     CUDA_VISIBLE_DEVICES=0,1,2,3 python evaluation.py --cfg ./best_cfgs/evaluation.yaml --output_dir ./output/test-time-evaluation/"[YOUR EXPERIMENRT NAME]"`
 
-### How to reproduce
-
-Train model
+## Train model
 
     CUDA_VISIBLE_DEVICES=0,1,2,3 python challenge_test_time.py --cfg ./best_cfgs/parallel_psedo_contrast.yaml --output_dir ./test-time-evaluation/"[YOUR EXPERIMENRT NAME]"
 
 The testing results and training logs will be saved in the `./output/test-time-evaluation/"[YOUR EXPERIMENRT NAME]"`
-
-## Acknowledgements
 
 
