@@ -24,10 +24,6 @@ class Parallel_psedo_contrast(nn.Module):
 
         device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
         self.model = model
-        if torch.cuda.is_available():
-            if torch.cuda.device_count() > 1:
-                self.model = torch.nn.DataParallel(self.model)
-                self.model.to(device)
         self.optimizer = optimizer
         self.steps = steps
         assert steps > 0, "cotta requires >= 1 step(s) to forward and update"
