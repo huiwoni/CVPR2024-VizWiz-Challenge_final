@@ -41,7 +41,7 @@ Before starting, modify the checkpoint path in `./best_cfgs/evaluation.yaml`.
 
 The pre-trained model can be found [here](https://drive.google.com/drive/folders/1UFVLyONwlqJpWE6hEw7Kqqxw2GdBo43m).
 
-The testing results and training logs will be saved in the `./output/test-time-evaluation/"[YOUR EXPERIMENRT NAME]"`.
+The testing results will be saved in the `./output/test-time-evaluation/"[YOUR EXPERIMENRT NAME]"`.
 
     CUDA_VISIBLE_DEVICES=0,1,2,3 python evaluation.py --cfg ./best_cfgs/evaluation.yaml --output_dir ./output/test-time-evaluation/"[YOUR EXPERIMENRT NAME]"`
 
