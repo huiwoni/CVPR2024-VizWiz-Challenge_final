@@ -23,8 +23,8 @@ def fix_seed(seed):
     torch.manual_seed(seed)
     torch.cuda.manual_seed_all(seed)
     if deterministic:
-	    torch.backends.cudnn.deterministic = True
-	    torch.backends.cudnn.benchmark = False
+        torch.backends.cudnn.deterministic = True
+        torch.backends.cudnn.benchmark = False
 ##################################################### func end
 
 def evaluate(cfg):
@@ -57,24 +57,24 @@ def evaluate(cfg):
 
     # start evaluation
     testset, test_loader = load_dataset(cfg.CORRUPTION.DATASET, cfg.DATA_DIR,
-                                                cfg.TEST.BATCH_SIZE,
-                                                split='all', domain=domain_name, level=severity,
-                                                adaptation=cfg.MODEL.ADAPTATION,
-                                                workers=min(cfg.TEST.NUM_WORKERS, os.cpu_count()),
-                                                ckpt=os.path.join(cfg.CKPT_DIR, 'Datasets'),
-                                                num_aug=cfg.TEST.N_AUGMENTATIONS,
-                                                model_arch=cfg.MODEL.ARCH)
+                                        cfg.TEST.BATCH_SIZE,
+                                        split='all',
+                                        adaptation=cfg.MODEL.ADAPTATION,
+                                        workers=min(cfg.TEST.NUM_WORKERS, os.cpu_count()),
+                                        ckpt=os.path.join(cfg.CKPT_DIR, 'Datasets'),
+                                        num_aug=cfg.TEST.N_AUGMENTATIONS,
+                                        model_arch=cfg.MODEL.ARCH)
 
     for epoch in range(cfg.TEST.EPOCH):
     ############################################################################################################ for start
-    	if cfg.MODEL.ADAPTATION == 'parallel_psedo_contrast':
+        if cfg.MODEL.ADAPTATION == 'parallel_psedo_contrast':
         ############################################################### if start
             results = create_submit_file_for_new_idea(model, data_loader=test_loader, mask = indices_in_1k, epoch = epoch, image_list = image_list)
         ############################################################### if end
-	else:
-        ######################################################## else start
+        else:
+        ############################################################### else start
             results = create_submit_file(model, data_loader=test_loader, mask = indices_in_1k)
-        ######################################################## else end
+        ############################################################### else end
 
         if ((epoch + 1) % 5) == 0:
             torch.save(model.state_dict(), os.path.join(cfg.OUTPUT, f'trained_{epoch+1}.pth'))
@@ -82,8 +82,8 @@ def evaluate(cfg):
         file_path = os.path.join(cfg.OUTPUT, datetime.now().strftime(f'{epoch+1}epoch_prediction-%m-%d-%Y-%H:%M:%S.json'))
         with open(file_path, 'w') as outfile:
             json.dump(results, outfile)
-        ######################################################################################################### for end
-	    
+        ############################################################################################################ for end
+
         if ((epoch + 1) % 5) == 0:
         ############################################ if start
             torch.save(model.state_dict(),
