@@ -23,7 +23,7 @@ def load_model(cfg):
     model_dict = {}
     arch_name = cfg.MODEL.ARCH
 
-    model_args = dict(depths=[3, 3, 27, 3], dims=[128, 256, 512, 1024])
+    model_args = dict(depths=[3, 4, 30, 3], dims=[384, 768, 1536, 3072], norm_eps=1e-5)
     model = ConvNeXt_para(3, 1000, **dict(model_args))
     model = BaseModel(model, arch_name)
 
