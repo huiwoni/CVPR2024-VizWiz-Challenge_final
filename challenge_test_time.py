@@ -70,8 +70,8 @@ def evaluate(cfg):
     	if cfg.MODEL.ADAPTATION == 'parallel_psedo_contrast':
         ############################################################### if start
             results = create_submit_file_for_new_idea(model, data_loader=test_loader, mask = indices_in_1k, epoch = epoch, image_list = image_list)
-            ############################################################### if end
-        else:
+        ############################################################### if end
+	else:
         ######################################################## else start
             results = create_submit_file(model, data_loader=test_loader, mask = indices_in_1k)
         ######################################################## else end
@@ -82,7 +82,7 @@ def evaluate(cfg):
         file_path = os.path.join(cfg.OUTPUT, datetime.now().strftime(f'{epoch+1}epoch_prediction-%m-%d-%Y-%H:%M:%S.json'))
         with open(file_path, 'w') as outfile:
             json.dump(results, outfile)
-        ############################################################################################################ for end
+        ######################################################################################################### for end
 	    
         if ((epoch + 1) % 5) == 0:
         ############################################ if start
@@ -100,8 +100,6 @@ def evaluate(cfg):
         ############################################################### func end
 
     ########################################################################################################################### for end
-
-    ################################################################################################################################################ for end
 
     return results
 
