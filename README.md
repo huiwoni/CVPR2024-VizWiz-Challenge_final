@@ -50,6 +50,8 @@ The testing results and training logs will be saved in the `./output/test-time-e
 
     CUDA_VISIBLE_DEVICES=0,1,2,3 python challenge_test_time.py --cfg ./best_cfgs/parallel_psedo_contrast.yaml --output_dir ./test-time-evaluation/"[YOUR EXPERIMENRT NAME]"
 
+## Acknowledgement
 
+Our codes borrowed from [yuyongcan](https://github.com/yuyongcan/Benchmark-TTA). Thanks for their work.
 
 
