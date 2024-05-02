@@ -1,9 +1,5 @@
 CORRUPTION:
   DATASET: challenge
-  SEVERITY:
-    - 5
-  TYPE:
-    - original
 ANNOTATION_PATH: ./datasets/annotations.json
 MODEL:
   ADAPTATION: parallel_psedo_contrast
