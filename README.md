@@ -1,4 +1,5 @@
 # [CVPR Vizwiz Challenge 2024]
+[image](https://github.com/huiwoni/CVPR2024-VizWiz-Challenge_final/assets/151484020/17cdcbb0-530e-4973-8785-ef4f26dc4a6f)
 ## Environments
 + Ubuntu 18.04.6 LTS
 + CUDA Version 11.3
