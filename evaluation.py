@@ -20,7 +20,6 @@ device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 def load_model(cfg):
 ########################################################################################################################
-    model_dict = {}
     arch_name = cfg.MODEL.ARCH
 
     model_args = dict(depths=[3, 4, 30, 3], dims=[384, 768, 1536, 3072], norm_eps=1e-5)
@@ -29,12 +28,7 @@ def load_model(cfg):
 
     model_load = torch.load(cfg.CHEAKPOINT)
 
-    for nm, para in model_load.items():
-        if (nm.split(".")[0]) == 'model':
-            model_dict[nm[13:]] = para
-
-    model.load_state_dict(model_dict)
-
+    model.load_state_dict(model_load)
     model.to(device)
     model.eval()
 
