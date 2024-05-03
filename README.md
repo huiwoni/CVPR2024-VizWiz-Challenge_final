@@ -34,16 +34,6 @@ This project contains several directories. Their roles are listed as follows:
     pip install opencv-python==4.9.0.80
     python extract_images.py
     ```
-    
-## Quick start (Test)
-
-Before starting, modify the checkpoint path in `./best_cfgs/evaluation.yaml`.
-
-The pre-trained model can be found [here](https://drive.google.com/file/d/1vL3TN6pW0y7sm4pXNUrbhGlguMScTmBt/view?usp=sharing).
-
-The testing results will be saved in the `./output/test-time-evaluation/"[YOUR EXPERIMENRT NAME]"`.
-
-    CUDA_VISIBLE_DEVICES=0,1,2,3 python evaluation.py --cfg ./best_cfgs/evaluation.yaml --output_dir ./output/test-time-evaluation/"[YOUR EXPERIMENRT NAME]"`
 
 ## Train model
 
