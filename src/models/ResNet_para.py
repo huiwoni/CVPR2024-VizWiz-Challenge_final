@@ -251,7 +251,7 @@ class Bottleneck(nn.Module):
             pass
 
         else:
-            x = x + 0.1 * self.conv_para(shortcut)
+            x = x + self.conv_para(shortcut)
 
         ################################################################################################################ if end
 
