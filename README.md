@@ -1,5 +1,7 @@
 # [CVPR Vizwiz Challenge 2024]
 
+Our code won 1st place VizWiz Zero-Shot Classification Challenge, hosted by CVPR 2024.
+
 ## Environments
 + Ubuntu 18.04.6 LTS
 + CUDA Version 11.3
